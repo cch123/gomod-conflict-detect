@@ -67,31 +67,39 @@ func recordPkg2Nodes(n *node) {
 func findConflict() {
 	conflictInSomePkg := false
 	for pkgname, nodes := range report.pkgnameMap {
-		if len(nodes) > 1 {
-			// may have conflict
-			var hasConflict = false
-			for i := 1; i < len(nodes); i++ {
-				if nodes[i].pkgNameWithVersion != nodes[i-1].pkgNameWithVersion {
-					hasConflict = true
-					conflictInSomePkg = true
-					break
-				}
+		if len(nodes) <= 1 {
+			continue
+		}
+
+		// may have conflict
+		var hasConflict = false
+		for i := 1; i < len(nodes); i++ {
+			if nodes[i].pkgNameWithVersion != nodes[i-1].pkgNameWithVersion {
+				hasConflict = true
+				conflictInSomePkg = true
+				break
 			}
-			if hasConflict {
-				fmt.Println("Conflict in pkg", pkgname, "paths are: ")
-				for _, n := range nodes {
-					fmt.Println("\r", strings.Join(n.path, " -> "))
-					report.conflictPaths[pkgname] = append(report.conflictPaths[pkgname], n.path)
-				}
+		}
+
+		if hasConflict {
+			fmt.Println(red("Conflict"), "in pkg", pkgname, "paths are: ")
+			for _, n := range nodes {
+				fmt.Println("\r", strings.Join(n.path, " -> "))
+				report.conflictPaths[pkgname] = append(report.conflictPaths[pkgname], n.path)
 			}
 		}
 	}
+
 	if !conflictInSomePkg {
 		fmt.Println("there is no conflict in your project dependencies")
 	}
 }
 
 func readInput() string {
+	if _, err := os.Stat("./go.mod"); os.IsNotExist(err) {
+		fmt.Println("cannot find go.mod", "\nPlease execute this tool under your", red("project path"), "\n\rand make sure there is a", red("go.mod"), "file")
+		os.Exit(1)
+	}
 	cmd := exec.Command("go", "mod", "graph")
 	resultBytes, err := cmd.Output()
 	if err != nil {
