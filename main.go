@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -91,6 +92,17 @@ func findConflict() {
 }
 
 func readInput() string {
+	cmd := exec.Command("go", "mod", "graph")
+	resultBytes, err := cmd.Output()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	return string(resultBytes)
+}
+
+// Deprecated: read from unix pipe
+func readInput2() string {
 	info, err := os.Stdin.Stat()
 	if err != nil {
 		panic(err)
